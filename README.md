@@ -1,5 +1,5 @@
 
-# Access Management Service
+# Notification Management Service
 
 This repository contains the **Notification Management Service**, an independent microservice implemented as a [Fission](https://fission.io/) function. It notification capabilities and is designed following **Domain-Driven Design (DDD)** principles along with the **Repository** and **Service** patterns.
 
