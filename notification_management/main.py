@@ -1,39 +1,24 @@
 from flask import request
 
-from sqlalchemy import Column, Integer, String
-
-from shared.infrastructure.db.db import Base, SessionLocal
-
-class Notification(Base):
-    __tablename__ = "notifications"  # Matches Django’s table name
-    __table_args__ = {"extend_existing": True}  # Avoid redefinition errors
-    id = Column(Integer, primary_key=True)
-    title = Column(String, nullable=False)
-    type = Column(String, nullable=False)
+from notification_management.application.services.notification_service import NotificationService
+from notification_management.domain.notification import Notification
+from notification_management.infrastructure.repositories.notification_repository import NotificationRepository
+from shared.infrastructure.messaging.kafka_producer import get_dispatcher
+from shared.utils.create_service import create_service
 
 
+dispatcher = get_dispatcher(kafka_topic_map="")
 
-def create_notification(title, type):
-    notification = Notification(
-        title=title,
-        type=type,
-    )
-    db = SessionLocal()
-    try:
-        db.add(notification)
-        db.commit()
-        db.refresh(notification)
-
-    finally:
-        db.close()
-    return {"title": title, "type": type}
-
-def send_notification(message):
-    print(f"Sending notification, {message}")
 
 def message_queue_entrypoint():
-    info = request.get_json()
-    send_notification(info)
-    create_notification(title=info, type="push")
+    notification_input = request.get_json()
+    service, uow = create_service(
+        NotificationRepository, NotificationService, dispatcher=dispatcher
+    )
+    with uow:
+        notification = Notification(**notification_input)
+        service.send_notification(notification_input=notification)
+        uow.register()
+
     return {"msg" : "notification sent"}
 
