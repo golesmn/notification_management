@@ -16,9 +16,9 @@ def message_queue_entrypoint():
         NotificationRepository, NotificationService, dispatcher=dispatcher
     )
     with uow:
-        notification = Notification(**notification_input)
+        notification = Notification.create(title=notification_input["event_type"], type="SMS")
         service.send_notification(notification_input=notification)
-        uow.register()
+        uow.register(notification)
 
     return {"msg" : "notification sent"}
 
